@@ -1,2 +1,2 @@
 # Final-Project-Python-R-UU-2024
-This is a repository for the Final Project of Fahd en Zee. It includes README-file and a code which runs the game SET.
+This is the README for the Final Project of Fahd en Zee. The other file in this repository is a code which runs the game SET.
