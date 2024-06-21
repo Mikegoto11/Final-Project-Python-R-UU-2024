@@ -1,3 +1,8 @@
+import pygame
+import random
+from itertools import combinations
+import os
+
 # Constants
 screen_width = 800
 screen_height = 600
@@ -33,3 +38,47 @@ difficulty_levels = {
     'veteran': 10
 }
 
+# Construct the path to the 'kaarten' directory in the Downloads folder
+image_dir = os.path.join(os.path.expanduser("~"), 'Downloads', 'kaarten')
+
+# Verify that the directory exists
+if not os.path.isdir(image_dir):
+    print("Directory path does not exist. Please ensure the 'kaarten' directory is in the Downloads folder.")
+    exit()
+
+# Function to load images
+def load_images():
+    images = {}
+    for filename in os.listdir(image_dir):
+        if filename.endswith(".gif"):
+            key = filename[:-4]  # Remove the '.gif' extension
+            images[key] = pygame.image.load(os.path.join(image_dir, filename)).convert()
+    print(f"Loaded image keys: {list(images.keys())}")  # Print loaded image keys for debugging
+    return images
+
+# SET Card Class
+class SetCard:
+    def __init__(self, color, symbol, shading, number):
+        self.color = color
+        self.symbol = symbol
+        self.shading = shading
+        self.number = number
+        self.image_key = f'{color}{symbol}{shading}{number}'
+
+    def __str__(self):
+        return f'Color: {self.color}, Symbol: {self.symbol}, Shading: {self.shading}, Number: {self.number}'
+
+    def draw(self, surface, x, y, index, highlight=False):
+        if self.image_key in images:
+            image = images[self.image_key]
+            # Resize image to fit card dimensions
+            image = pygame.transform.scale(image, (card_width, card_height))
+            pygame.draw.rect(surface, white, (x, y, card_width, card_height))
+            pygame.draw.rect(surface, black, (x, y, card_width, card_height), 2)
+            surface.blit(image, (x, y))
+            
+            # Draw card index
+            text = font.render(str(index + 1), True, black)
+            surface.blit(text, (x + text_margin, y + text_margin))
+        else:
+            print(f"Missing image for key: {self.image_key}")  # Log missing images for debugging
