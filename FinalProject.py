@@ -82,3 +82,45 @@ class SetCard:
             surface.blit(text, (x + text_margin, y + text_margin))
         else:
             print(f"Missing image for key: {self.image_key}")  # Log missing images for debugging
+
+# Function to check if three cards form a SET
+def is_set(card1, card2, card3):
+    attributes = ['color', 'symbol', 'shading', 'number']
+    for attribute in attributes:
+        attr1 = getattr(card1, attribute)
+        attr2 = getattr(card2, attribute)
+        attr3 = getattr(card3, attribute)
+        if not ((attr1 == attr2 == attr3) or (attr1 != attr2 != attr3 != attr1)):
+            return False
+    return True
+
+# Function to find all sets from a collection of cards
+def find_all_sets(cards):
+    all_sets = []
+    for combo in combinations(cards, 3):
+        if is_set(*combo):
+            all_sets.append(combo)
+    return all_sets
+
+# Function to find one set from a collection of cards
+def find_one_set(cards):
+    for combo in combinations(cards, 3):
+        if is_set(*combo):
+            return combo
+    return None
+
+# Generate a random deck of SET cards
+def generate_deck():
+    deck = []
+    colors = ['red', 'green', 'purple']
+    symbols = ['diamond', 'squiggle', 'oval']
+    shadings = ['empty', 'filled', 'shaded']
+    numbers = [1, 2, 3]
+
+    for color in colors:
+        for symbol in symbols:
+            for shading in shadings:
+                for number in numbers:
+                    deck.append(SetCard(color, symbol, shading, number))
+    random.shuffle(deck)
+    return deck
