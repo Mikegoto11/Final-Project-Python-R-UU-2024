@@ -124,3 +124,33 @@ def generate_deck():
                     deck.append(SetCard(color, symbol, shading, number))
     random.shuffle(deck)
     return deck
+
+# Save and load high scores
+def load_high_scores():
+    try:
+        with open("high_scores.txt", "r") as file:
+            return int(file.read().strip())
+    except FileNotFoundError:
+        return 0
+
+def save_high_scores(score):
+    with open("high_scores.txt", "w") as file:
+        file.write(str(score))
+
+def reset_high_scores():
+    with open("high_scores.txt", "w") as file:
+        file.write("0")
+
+# Draw buttons for the game
+def draw_button(surface, x, y, width, height, text, action=None):
+    mouse = pygame.mouse.get_pos()
+    click = pygame.mouse.get_pressed()
+    if x + width > mouse[0] > x and y + height > mouse[1] > y:
+        pygame.draw.rect(surface, button_color, (x, y, width, height))
+        if click[0] == 1 and action is not None:
+            action()
+    else:
+        pygame.draw.rect(surface, button_color, (x, y, width, height), 2)
+
+    text_surface = font.render(text, True, white)
+    surface.blit(text_surface, (x + (width - text_surface.get_width()) // 2, y + (height - text_surface.get_height()) // 2))
