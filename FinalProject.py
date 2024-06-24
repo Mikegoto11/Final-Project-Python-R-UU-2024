@@ -154,3 +154,23 @@ def draw_button(surface, x, y, width, height, text, action=None):
 
     text_surface = font.render(text, True, white)
     surface.blit(text_surface, (x + (width - text_surface.get_width()) // 2, y + (height - text_surface.get_height()) // 2))
+
+# Game state functions
+def start_game(difficulty):
+    global game_active, deck, cards_on_table, player_score, computer_score, timer_start, timer_limit, current_screen, set_found_time, display_set_message, display_computer_set_message
+    game_active = True
+    deck = generate_deck()
+    cards_on_table = deck[:12]
+    deck = deck[12:]
+    player_score = 0
+    computer_score = 0
+    timer_limit = difficulty_levels[difficulty]
+    timer_start = pygame.time.get_ticks()
+    set_found_time = None  # Reset set found time
+    display_set_message = False  # Initialize display_set_message
+    display_computer_set_message = False  # Initialize display_computer_set_message
+    current_screen = "game"
+
+def pause_game():
+    global game_active
+    game_active = not game_active
