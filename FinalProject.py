@@ -174,3 +174,176 @@ def start_game(difficulty):
 def pause_game():
     global game_active
     game_active = not game_active
+
+# Main Loop
+
+def main():
+    global game_active, deck, cards_on_table, player_score, computer_score, timer_start, images, current_screen, timer_limit, set_found_time, display_set_message, display_computer_set_message
+
+    images = load_images()  # Load images using the dynamically constructed path
+
+    reset_high_scores()  # Reset high scores when the program starts
+
+    game_active = False
+    selected_indices = []
+    high_score = load_high_scores()
+    current_screen = "start"
+    display_set_message = False
+    display_computer_set_message = False
+    set_found_time = 0
+
+    while True:
+        screen.fill(black)
+        
+        if current_screen == "game":
+            if game_active:
+                # Display the 12 cards
+                for i, card in enumerate(cards_on_table):
+                    x = (i % 4) * (card_width + card_margin) + card_margin
+                    y = (i // 4) * (card_height + card_margin) + card_margin
+                    card.draw(screen, x, y, i, highlight=(i in selected_indices))
+
+                # Display high score in the top right corner
+                high_score_text = font.render(f'High Score: {high_score}', True, white)
+                screen.blit(high_score_text, (screen_width - high_score_text.get_width() - 10, 10))  # Top-right corner
+
+                # Display the player score under the high score
+                player_score_text = font.render(f'Score: {player_score}', True, white)
+                screen.blit(player_score_text, (screen_width - player_score_text.get_width() - 10, 10 + high_score_text.get_height() + 10))  # Under high score
+
+                # Display the computer score under the player score
+                computer_score_text = font.render(f'Computer Score: {computer_score}', True, white)
+                screen.blit(computer_score_text, (screen_width - computer_score_text.get_width() - 10, 10 + high_score_text.get_height() + player_score_text.get_height() + 20))  # Under player score
+
+                # Timer display in the middle at the bottom
+                elapsed_time = (pygame.time.get_ticks() - timer_start) // 1000
+                timer_text = font.render(f'Time: {timer_limit - elapsed_time}', True, white)
+                timer_text_rect = timer_text.get_rect(center=(screen_width // 2, screen_height - 40))  # Center at bottom
+                screen.blit(timer_text, timer_text_rect)
+
+                # Display selected cards
+                selected_text = font.render('Selected Cards: ' + ', '.join(str(idx + 1) for idx in selected_indices), True, white)
+                screen.blit(selected_text, (10, screen_height - 80))
+
+                # Draw pause button
+                draw_button(screen, screen_width - button_width - 10, screen_height - button_height - 10, button_width, button_height, "Pause", pause_game)
+
+                # Display "SET!" if a set was found
+                if display_set_message and pygame.time.get_ticks() - set_found_time < set_display_time:
+                    set_text = big_font.render("SET!", True, green)
+                    screen.blit(set_text, (screen_width // 2 - set_text.get_width() // 2, screen_height // 2 - set_text.get_height() // 2))
+                else:
+                    display_set_message = False
+
+                # Display "Computer SET!" if the computer found a set
+                if display_computer_set_message and pygame.time.get_ticks() - set_found_time < set_display_time:
+                    set_text = big_font.render("Computer SET!", True, red)
+                    screen.blit(set_text, (screen_width // 2 - set_text.get_width() // 2, screen_height // 2 - set_text.get_height() // 2))
+                else:
+                    display_computer_set_message = False
+
+                pygame.display.flip()
+
+                # Check if timer expired
+                if elapsed_time >= timer_limit:
+                    print("Time's up! Checking for sets.")
+                    computer_set = find_one_set(cards_on_table)
+                    display_set_message = False  # Reset display_set_message
+                    display_computer_set_message = False  # Reset display_computer_set_message
+                    if computer_set is not None:
+                        computer_score += 1
+                        set_found_time = pygame.time.get_ticks()  # Set the time when a set is found
+                        display_computer_set_message = True  # Set flag to display "Computer SET!" message
+                    timer_start = pygame.time.get_ticks()  # Reset timer
+                    cards_on_table = cards_on_table[3:] + deck[:3]
+                    deck = deck[3:]
+
+                # Event handling
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        save_high_scores(high_score)
+                        pygame.quit()
+                        return
+                    elif event.type == pygame.MOUSEBUTTONDOWN:
+                        # Determine which card is clicked
+                        mouse_x, mouse_y = pygame.mouse.get_pos()
+                        for i, card in enumerate(cards_on_table):
+                            x = (i % 4) * (card_width + card_margin) + card_margin
+                            y = (i // 4) * (card_height + card_margin) + card_margin
+                            if x <= mouse_x <= x + card_width and y <= mouse_y <= y + card_height:
+                                if i in selected_indices:
+                                    selected_indices.remove(i)
+                                else:
+                                    selected_indices.append(i)
+                                if len(selected_indices) == 3:
+                                    selected_cards = [cards_on_table[idx] for idx in selected_indices]
+                                    if is_set(*selected_cards):
+                                        print("It's a SET!")
+                                        player_score += 1
+                                        set_found_time = pygame.time.get_ticks()  # Set the time when a set is found
+                                        display_set_message = True  # Set flag to display "SET!" message
+                                        display_computer_set_message = False  # Reset computer set message
+                                        for idx in sorted(selected_indices, reverse=True):
+                                            cards_on_table.pop(idx)
+                                        cards_on_table.extend(deck[:3])
+                                        deck = deck[3:]
+                                        if player_score > high_score:
+                                            high_score = player_score
+                                            save_high_scores(high_score)
+                                        timer_start = pygame.time.get_ticks()  # Reset timer when set is found
+                                    else:
+                                        print("Not a SET.")
+                                    selected_indices.clear()
+                                break
+            else:
+                # Display pause menu buttons
+                draw_button(screen, screen_width // 2 - button_width // 2, screen_height // 2 - 100, button_width, button_height, "Resume", pause_game)
+                draw_button(screen, screen_width // 2 - button_width // 2, screen_height // 2, button_width, button_height, "Home", lambda: set_screen("start"))
+
+                pygame.display.flip()
+
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        save_high_scores(high_score)
+                        pygame.quit()
+                        return
+
+        elif current_screen == "start":
+            # Display start button
+            draw_button(screen, screen_width // 2 - button_width // 2, screen_height // 2 - 100, button_width, button_height, "Start", lambda: set_screen("difficulty"))
+
+            # Display high score
+            high_score_text = font.render(f'High Score: {high_score}', True, white)
+            screen.blit(high_score_text, (screen_width // 2 - high_score_text.get_width() // 2, screen_height - 100))
+
+            pygame.display.flip()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    save_high_scores(high_score)
+                    pygame.quit()
+                    return
+
+        elif current_screen == "difficulty":
+            # Display difficulty level buttons
+            draw_button(screen, screen_width // 2 - button_width // 2, screen_height // 2 - 150, button_width, button_height, "Easy", lambda: start_game('easy'))
+            draw_button(screen, screen_width // 2 - button_width // 2, screen_height // 2 - 50, button_width, button_height, "Medium", lambda: start_game('medium'))
+            draw_button(screen, screen_width // 2 - button_width // 2, screen_height // 2 + 50, button_width, button_height, "Hard", lambda: start_game('hard'))
+            draw_button(screen, screen_width // 2 - button_width // 2, screen_height // 2 + 150, button_width, button_height, "Veteran", lambda: start_game('veteran'))
+
+            pygame.display.flip()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    save_high_scores(high_score)
+                    pygame.quit()
+                    return
+
+        pygame.display.flip()
+
+def set_screen(screen_name):
+    global current_screen
+    current_screen = screen_name
+
+if __name__ == "__main__":
+    main()
